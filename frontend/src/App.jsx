@@ -1,15 +1,18 @@
-import { useState } from 'react'
-import './App.css'
-import SearchBar from './components/SearchBar'
-import MedicineCard from './components/MedicineCard'
-import { medicineData } from './data/medicines'
+import { useState } from "react";
+import "./App.css";
+import SearchBar from "./components/SearchBar";
+import MedicineCard from "./components/MedicineCard";
+import { medicineData } from "./data/medicines";
+import FileInput from "./components/FileInput";
 
 function App() {
   const [searchResults, setSearchResults] = useState(null);
 
+  const convertFile = () => {};
+
   const handleSearch = (query) => {
     // Simple case-insensitive search
-    const results = Object.entries(medicineData).find(([name]) => 
+    const results = Object.entries(medicineData).find(([name]) =>
       name.toLowerCase().includes(query.toLowerCase())
     );
     setSearchResults(results ? { name: results[0], ...results[1] } : null);
@@ -36,11 +39,13 @@ function App() {
               Find Affordable Generic Alternatives
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl">
-              Enter the name of your branded medicine to discover cost-effective generic options
+              Enter the name of your branded medicine to discover cost-effective
+              generic options
             </p>
           </div>
 
           <SearchBar onSearch={handleSearch} />
+          <FileInput />
 
           {searchResults && (
             <div className="w-full mt-8">
@@ -66,7 +71,7 @@ function App() {
         </div>
       </main>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

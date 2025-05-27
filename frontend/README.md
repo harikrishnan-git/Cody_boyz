@@ -12,18 +12,21 @@ A web application that helps users find affordable generic alternatives to brand
 ## Prerequisites
 
 Before running this project, make sure you have the following installed:
+
 - [Node.js](https://nodejs.org/) (v14.0.0 or higher)
 - npm (comes with Node.js)
 
 ## Installation
 
 1. Clone the repository:
+
 ```bash
 git clone <your-repository-url>
 cd Cody_boyz/frontend
 ```
 
 2. Install the dependencies:
+
 ```bash
 npm install
 ```
@@ -93,6 +96,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Sample Data
 
 The application currently includes sample data for the following medicines:
+
 - Augmentin 625
 - Crocin Advance
 - Allegra 120

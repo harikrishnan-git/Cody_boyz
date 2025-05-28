@@ -62,3 +62,26 @@ class MedicineDB:
         
         conn.close()
         return results
+
+    def insert_medicine(self, name: str, composition: str, generic_name: str, match_score: float) -> bool:
+        """Insert a new medicine into the database"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            
+            # Check if medicine already exists
+            cursor.execute('SELECT id FROM medicines WHERE LOWER(name) = LOWER(?)', (name,))
+            if cursor.fetchone():
+                return False  # Medicine already exists
+            
+            cursor.execute('''
+                INSERT INTO medicines (name, combined_composition, matched_generic, match_score)
+                VALUES (?, ?, ?, ?)
+            ''', (name, composition, generic_name, match_score))
+            
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            print(f"Error inserting medicine: {str(e)}")
+            return False

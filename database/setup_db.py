@@ -22,34 +22,39 @@ def setup_database():
         )
         ''')
 
-        # Import data from the new CSV file
-        csv_path = 'high_confidence_matches.csv'
-        if os.path.exists(csv_path):
-            print(f"Found CSV file at {csv_path}")
-            # Read the CSV file
-            df = pd.read_csv(csv_path)
-            
-            # Convert match_score to numeric, removing any % signs if present
-            df['match_score'] = pd.to_numeric(df['match_score'].astype(str).str.replace('%', ''), errors='coerce')
-            
-            # Insert the data row by row
-            for _, row in df.iterrows():
-                cursor.execute('''
-                INSERT INTO medicines (name, combined_composition, matched_generic, match_score)
-                VALUES (?, ?, ?, ?)
-                ''', (row['name'], row['combined_composition'], row['matched_generic'], row['match_score']))
-            
-            print(f"Imported {len(df)} records from CSV")
-        else:
-            print(f"CSV file not found at {csv_path}")
+        # Import data from both CSV files
+        csv_files = ['high_confidence_matches.csv', 'sample_branded_to_generic_matches.csv']
+        total_records = 0
+        
+        for csv_path in csv_files:
+            if os.path.exists(csv_path):
+                print(f"\nProcessing CSV file: {csv_path}")
+                # Read the CSV file
+                df = pd.read_csv(csv_path)
+                
+                # Convert match_score to numeric, removing any % signs if present
+                df['match_score'] = pd.to_numeric(df['match_score'].astype(str).str.replace('%', ''), errors='coerce')
+                
+                # Insert the data row by row
+                for _, row in df.iterrows():
+                    cursor.execute('''
+                    INSERT INTO medicines (name, combined_composition, matched_generic, match_score)
+                    VALUES (?, ?, ?, ?)
+                    ''', (row['name'], row['combined_composition'], row['matched_generic'], row['match_score']))
+                
+                total_records += len(df)
+                print(f"Imported {len(df)} records from {csv_path}")
+            else:
+                print(f"CSV file not found: {csv_path}")
         
         conn.commit()
-        print("Database setup complete!")
+        print("\nDatabase setup complete!")
         
         # Verify the data
         cursor.execute('SELECT COUNT(*) FROM medicines')
         count = cursor.fetchone()[0]
-        print(f"Total records in database: {count}")
+        print(f"\nTotal records in database: {count}")
+        print(f"Successfully imported {total_records} records from {len(csv_files)} files")
         
         # Print a few sample records
         print("\nSample records:")

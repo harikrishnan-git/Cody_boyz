@@ -2,74 +2,104 @@ import { useState } from "react";
 import "./App.css";
 import SearchBar from "./components/SearchBar";
 import MedicineCard from "./components/MedicineCard";
-import { medicineData } from "./data/medicines";
 import FileInput from "./components/FileInput";
 
 function App() {
-  const [searchResults, setSearchResults] = useState(null);
+  const [searchResults, setSearchResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const convertFile = () => {};
+  const handleSearch = async (query) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `http://localhost:8000/medicines/search/${encodeURIComponent(query)}`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch results");
+      }
+      const data = await response.json();
+      setSearchResults(data);
+    } catch (err) {
+      setError("Failed to fetch results. Please try again.");
+      console.error("Search error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleSearch = (query) => {
-    // Simple case-insensitive search
-    const results = Object.entries(medicineData).find(([name]) =>
-      name.toLowerCase().includes(query.toLowerCase())
-    );
-    setSearchResults(results ? { name: results[0], ...results[1] } : null);
+  const handlePrescriptionText = async (medicineNames) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const results = [];
+      for (const name of medicineNames) {
+        const response = await fetch(
+          `http://localhost:8000/medicines/search/${encodeURIComponent(name.trim())}`
+        );
+        if (!response.ok) {
+          continue; // Skip failed searches
+        }
+        const data = await response.json();
+        if (data && data.length > 0) {
+          results.push(...data);
+        }
+      }
+      setSearchResults(results);
+      if (results.length === 0) {
+        setError("No medicines found in the prescription.");
+      }
+    } catch (err) {
+      setError("Failed to process prescription. Please try again.");
+      console.error("Prescription processing error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-gray-900">
-              <span className="text-primary">Medi</span>
-              <span className="text-secondary">Wise</span>
-            </h1>
-            <p className="text-gray-600">Generic Medicine Finder</p>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-100 py-8 px-4">
+      <div className="container mx-auto">
+        <h1 className="text-4xl font-bold text-center text-gray-800 mb-8">
+          Medicine Search
+        </h1>
 
-      <main className="max-w-7xl mx-auto px-4 py-12">
-        <div className="flex flex-col items-center gap-8">
+        <div className="flex flex-col items-center gap-8 mb-8">
+          <SearchBar onSearch={handleSearch} />
+          <div className="text-center text-gray-600">- OR -</div>
+          <FileInput onExtractComplete={handlePrescriptionText} />
+        </div>
+
+        {loading && (
           <div className="text-center">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Find Affordable Generic Alternatives
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl">
-              Enter the name of your branded medicine to discover cost-effective
-              generic options
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-gray-600">
+              {searchResults.length > 0
+                ? "Processing more medicines..."
+                : "Searching for medicines..."}
             </p>
           </div>
+        )}
 
-          <SearchBar onSearch={handleSearch} />
-          <FileInput />
+        {error && (
+          <div className="text-center text-red-600 mb-4">{error}</div>
+        )}
 
-          {searchResults && (
-            <div className="w-full mt-8">
-              <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-                <h2 className="text-2xl font-semibold text-gray-800">
-                  {searchResults.name}
-                </h2>
-                <p className="text-lg text-gray-600 mt-2">
-                  Salt Composition: {searchResults.salt}
-                </p>
-              </div>
-
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">
-                Generic Alternatives
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {searchResults.alternatives.map((med, index) => (
-                  <MedicineCard key={index} {...med} />
-                ))}
-              </div>
-            </div>
-          )}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {searchResults.map((medicine, index) => (
+            <MedicineCard
+              key={`${medicine.id}-${index}`}
+              name={medicine.name}
+              manufacturer="Generic"
+              price="Contact pharmacy"
+              genericName={medicine.matched_generic}
+              composition={medicine.combined_composition}
+              matchScore={medicine.match_score}
+            />
+          ))}
         </div>
-      </main>
+      </div>
     </div>
   );
 }

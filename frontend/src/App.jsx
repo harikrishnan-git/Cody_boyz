@@ -59,22 +59,35 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4">
-      <div className="container mx-auto">
-        <h1 className="text-4xl font-bold text-center text-gray-800 mb-8">
-          Medicine Search
-        </h1>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+      <div className="bg-gradient-to-r from-primary/90 to-secondary/90 text-white py-12 px-4 mb-8">
+        <div className="container mx-auto max-w-7xl">
+          <h1 className="text-4xl md:text-5xl font-bold text-center mb-4">
+            Generic Medicine Finder
+          </h1>
+          <p className="text-center text-white/90 text-lg max-w-2xl mx-auto">
+            Find affordable generic alternatives to your prescribed medicines
+          </p>
+        </div>
+      </div>
 
-        <div className="flex flex-col items-center gap-8 mb-8">
-          <SearchBar onSearch={handleSearch} />
-          <div className="text-center text-gray-600">- OR -</div>
-          <FileInput onExtractComplete={handlePrescriptionText} />
+      <div className="container mx-auto max-w-7xl px-4 pb-12">
+        <div className="flex flex-col items-center gap-8 mb-12">
+          <div className="w-full max-w-2xl bg-white rounded-xl shadow-md p-6">
+            <SearchBar onSearch={handleSearch} />
+            <div className="flex items-center my-6">
+              <div className="flex-1 h-px bg-gray-200"></div>
+              <span className="px-4 text-sm text-gray-500 font-medium">OR</span>
+              <div className="flex-1 h-px bg-gray-200"></div>
+            </div>
+            <FileInput onExtractComplete={handlePrescriptionText} />
+          </div>
         </div>
 
         {loading && (
-          <div className="text-center">
+          <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-gray-600">
+            <p className="mt-4 text-gray-600 font-medium">
               {searchResults.length > 0
                 ? "Processing more medicines..."
                 : "Searching for medicines..."}
@@ -83,7 +96,9 @@ function App() {
         )}
 
         {error && (
-          <div className="text-center text-red-600 mb-4">{error}</div>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center text-red-600 mb-8 max-w-2xl mx-auto">
+            {error}
+          </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

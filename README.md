@@ -95,10 +95,12 @@ Once the backend is running, you can access the API documentation at:
 ## Troubleshooting
 
 1. If you get CORS errors:
+
    - Make sure both servers are running
    - Check that you're using the correct ports
 
 2. If the database isn't working:
+
    - Delete medicines.db
    - Run `python setup_db.py` again
 

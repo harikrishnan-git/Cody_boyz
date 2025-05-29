@@ -35,21 +35,27 @@ function App() {
   const handlePrescriptionText = async (medicineNames) => {
     setLoading(true);
     setError(null);
-    try {
-      if (gotany === false) return;
-      const exactResults = [];
-      const similarResults = [];
 
-      for (const name of medicineNames) {
+    if (!gotany) {
+      setLoading(false);
+      return;
+    }
+
+    const exactResults = [];
+    const similarResults = [];
+
+    try {
+      for (const med of medicineNames) {
         const response = await fetch(
           `http://localhost:8000/medicines/search/${encodeURIComponent(
-            name.trim()
+            med.trim()
           )}`
         );
         if (!response.ok) {
           continue;
         }
         const data = await response.json();
+
         if (data.exact_matches.length > 0) {
           exactResults.push(...data.exact_matches);
         }

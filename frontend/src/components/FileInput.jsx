@@ -99,10 +99,8 @@ export default function FileInput({ onExtractComplete, setGotany }) {
     }
     if (!meds || meds.length === 0) return;
     setGotany(true);
-    meds.map((data) => {
-      if (!data) return;
-      onExtractComplete(data);
-    });
+
+    onExtractComplete(meds);
   }, [meds]);
 
   return (

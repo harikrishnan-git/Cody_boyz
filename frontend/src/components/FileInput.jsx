@@ -28,28 +28,19 @@ export default function FileInput({ onExtractComplete }) {
       const {
         data: { text },
       } = await worker.recognize(file);
-      await worker.terminate();      // Extract medicine names with improved filtering
+      await worker.terminate();
+
       const medicineNames = text
         .split('\n')
         .map(line => line.trim())
-        .filter(line => {
-          // Remove lines that are just numbers, dates, or common prescription words
-          if (line.match(/^[0-9.]+$/) || 
-              line.match(/^\d{1,2}\/\d{1,2}\/\d{2,4}$/) ||
-              /^(dr|prescription|rx|pharmacy|date|name|age|sex|address|directions|sig|phone)/i.test(line)) {
-            return false;
-          }
-          
-          // Keep lines that look like medicine entries:
-          // - Contains numbers with units (e.g., 500mg, 10ml)
-          // - Contains common medicine suffixes
-          // - Is between 4 and 50 characters (to avoid long sentences)
-          return (line.length >= 4 && line.length <= 50) && (
-            line.match(/\d+\s*(mg|ml|mcg|g|iu)/i) ||
-            /tablet|capsule|injection|syrup|ointment|gel|cream|suspension|solution/i.test(line) ||
-            /(cin|zole|olol|ide|ate|ine|xin|sin|lin|din)$/i.test(line.split(' ')[0]) // Common drug name endings
-          );
-        });
+        .filter(line => line.length > 0)
+        .filter(line => !line.match(/^[0-9.]+$/))
+        .filter(line => line.length > 3);
+        /*const medicineNames = text
+        .toLowerCase()
+        .split(/\s+|,|\(|\)|\.|\n|:/) // split by space, punctuation, etc.
+        .map(w => w.trim())
+        .filter(w => w.length > 2);  // filter out very short tokens like 'mg', 'sr', etc.*/
       
       if (medicineNames.length === 0) {
         setError('No medicine names found in the image. Please ensure the image is clear and contains medicine names.');
@@ -57,6 +48,15 @@ export default function FileInput({ onExtractComplete }) {
       }
 
       setText(text);
+      const response = await fetch("http://localhost:3001/api/clean-medicines", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text }), // send raw OCR result to backend
+      });
+      const data = await response.json();
+      console.log(data);
       onExtractComplete(medicineNames);
     } catch (err) {
       setError('Error processing the image. Please try again with a clearer image.');

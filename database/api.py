@@ -6,8 +6,25 @@ from typing import List, Dict, Optional
 import requests
 from bs4 import BeautifulSoup
 import re
+from fastapi import Body
+
 
 app = FastAPI()
+
+@app.post("/medicines/search-multiple")
+async def search_multiple_medicines(medicines: List[str] = Body(...)) -> List[Dict]:
+    results = []
+    seen_ids = set()
+    
+    for med in medicines:
+        med_results = db.search_medicines(med)
+        for res in med_results:
+            if res['id'] not in seen_ids:
+                results.append(res)
+                seen_ids.add(res['id'])
+                
+    # Optionally limit results to top 10
+    return results[:10]
 
 # Configure CORS for frontend access
 app.add_middleware(

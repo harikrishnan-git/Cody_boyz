@@ -10,6 +10,7 @@ export default function FileInput({ onExtractComplete }) {
   const changeFile = (e) => {
     setFile(e.target.files[0]);
     setError(null);
+    setText("");  // Clear previous text when new file is selected
   };
 
   const readFile = async () => {
@@ -21,6 +22,8 @@ export default function FileInput({ onExtractComplete }) {
     try {
       setIsProcessing(true);
       setError(null);
+      
+      // First do OCR
       const worker = await createWorker("eng", 1, {
         logger: (m) => console.log(m),
       });
@@ -29,38 +32,39 @@ export default function FileInput({ onExtractComplete }) {
         data: { text },
       } = await worker.recognize(file);
       await worker.terminate();
-
-      const medicineNames = text
-        .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0)
-        .filter(line => !line.match(/^[0-9.]+$/))
-        .filter(line => line.length > 3);
-        /*const medicineNames = text
-        .toLowerCase()
-        .split(/\s+|,|\(|\)|\.|\n|:/) // split by space, punctuation, etc.
-        .map(w => w.trim())
-        .filter(w => w.length > 2);  // filter out very short tokens like 'mg', 'sr', etc.*/
       
-      if (medicineNames.length === 0) {
-        setError('No medicine names found in the image. Please ensure the image is clear and contains medicine names.');
-        return;
-      }
-
       setText(text);
+      console.log("OCR Text:", text);  // Debug log
+
+      // Then send to backend for processing
       const response = await fetch("http://localhost:3001/api/clean-medicines", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ text }), // send raw OCR result to backend
+        body: JSON.stringify({ text }),
       });
+
       const data = await response.json();
-      console.log(data);
-      onExtractComplete(medicineNames);
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to process prescription');
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'No medicines found in the prescription');
+      }
+
+      if (!data.medicines || data.medicines.length === 0) {
+        throw new Error('No medicine names found in the image. Please ensure the image is clear and contains medicine names.');
+      }
+
+      console.log("Processed medicines:", data.medicines);  // Debug log
+      onExtractComplete(data.medicines);
+
     } catch (err) {
-      setError('Error processing the image. Please try again with a clearer image.');
-      console.error('OCR Error:', err);
+      console.error('Processing Error:', err);
+      setError(err.message || 'Error processing the image. Please try again.');
     } finally {
       setIsProcessing(false);
     }

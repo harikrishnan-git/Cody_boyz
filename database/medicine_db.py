@@ -1,5 +1,6 @@
 import sqlite3
 from typing import List, Dict, Optional
+from fuzzywuzzy import fuzz
 
 class MedicineDB:
     def __init__(self, db_path: str = 'medicines.db'):

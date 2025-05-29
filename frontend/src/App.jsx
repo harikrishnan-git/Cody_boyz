@@ -9,6 +9,7 @@ function App() {
   const [similarCompounds, setSimilarCompounds] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [gotany, setGotany] = useState(false);
 
   const handleSearch = async (query) => {
     setLoading(true);
@@ -35,12 +36,15 @@ function App() {
     setLoading(true);
     setError(null);
     try {
+      if (gotany === false) return;
       const exactResults = [];
       const similarResults = [];
 
       for (const name of medicineNames) {
         const response = await fetch(
-          `http://localhost:8000/medicines/search/${encodeURIComponent(name.trim())}`
+          `http://localhost:8000/medicines/search/${encodeURIComponent(
+            name.trim()
+          )}`
         );
         if (!response.ok) {
           continue;
@@ -90,7 +94,10 @@ function App() {
               <span className="px-4 text-sm text-gray-500 font-medium">OR</span>
               <div className="flex-1 h-px bg-gray-200"></div>
             </div>
-            <FileInput onExtractComplete={handlePrescriptionText} />
+            <FileInput
+              onExtractComplete={handlePrescriptionText}
+              setGotany={setGotany}
+            />
           </div>
         </div>
 

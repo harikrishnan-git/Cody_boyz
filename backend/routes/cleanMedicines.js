@@ -4,10 +4,10 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
 import axios from "axios";
 
-dotenv.config({ path: './.env' });
+dotenv.config({ path: "./.env" });
 const router = express.Router();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 router.post("/api/clean-medicines", async (req, res) => {
   const { text } = req.body;
@@ -21,9 +21,9 @@ router.post("/api/clean-medicines", async (req, res) => {
 
   // Basic OCR text cleanup
   const cleanedText = text
-    .replace(/\r\n|\r|\n/g, ' ')  // Replace line breaks with spaces
-    .replace(/\s+/g, ' ')         // Replace multiple spaces with single space
-    .trim();                      // Remove leading/trailing whitespace
+    .replace(/\r\n|\r|\n/g, " ") // Replace line breaks with spaces
+    .replace(/\s+/g, " ") // Replace multiple spaces with single space
+    .trim(); // Remove leading/trailing whitespace
 
   console.log("Cleaned OCR Text:", cleanedText);
 
@@ -65,9 +65,9 @@ Remember to convert everything to lowercase and clean up any OCR artifacts.
 
     // Clean the Markdown formatting and handle potential JSON parsing errors
     try {
-      const cleaned = rawText.replace(/```json|```|\n/g, '').trim();
+      const cleaned = rawText.replace(/```json|```|\n/g, "").trim();
       const medicines = JSON.parse(cleaned);
-      
+
       if (!Array.isArray(medicines) || medicines.length === 0) {
         throw new Error("No valid medicine names found in the prescription");
       }
@@ -76,7 +76,11 @@ Remember to convert everything to lowercase and clean up any OCR artifacts.
       const searchResults = [];
       for (const medicine of medicines) {
         try {
-          const response = await axios.get(`http://localhost:8000/medicines/search/${encodeURIComponent(medicine)}`);
+          const response = await axios.get(
+            `http://localhost:8000/medicines/search/${encodeURIComponent(
+              medicine
+            )}`
+          );
           if (response.data && response.data.exact_matches) {
             searchResults.push(...response.data.exact_matches);
           }
@@ -90,23 +94,22 @@ Remember to convert everything to lowercase and clean up any OCR artifacts.
       res.json({
         medicines,
         searchResults,
-        success: true
+        success: true,
       });
-
     } catch (parseErr) {
       console.error("JSON Parse Error:", parseErr);
-      res.status(400).json({ 
-        error: "Failed to parse medicine names from the AI response", 
+      res.status(400).json({
+        error: "Failed to parse medicine names from the AI response",
         details: parseErr.message,
-        success: false 
+        success: false,
       });
     }
   } catch (geminiErr) {
     console.error("Gemini Error:", geminiErr);
-    res.status(500).json({ 
-      error: "Failed to extract medicine names from the prescription", 
+    res.status(500).json({
+      error: "Failed to extract medicine names from the prescription",
       details: geminiErr.message,
-      success: false 
+      success: false,
     });
   }
 });

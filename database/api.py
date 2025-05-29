@@ -26,14 +26,36 @@ class Medicine(BaseModel):
     generic_name: str
     match_score: float
 
+class SearchResponse(BaseModel):
+    exact_matches: List[Dict]
+    similar_compounds: List[Dict]
+
 @app.get("/")
 async def root():
     return {"message": "Medicine Database API"}
 
 @app.get("/medicines/search/{query}")
-async def search_medicines(query: str) -> List[Dict]:
-    results = db.search_medicines(query)
-    return results
+async def search_medicines(query: str) -> SearchResponse:
+    """Search for medicines by name or composition"""
+    # First search for exact matches
+    exact_matches = db.search_medicines(query)
+    
+    # If exact matches found, also look for similar compounds
+    similar_compounds = []
+    if exact_matches:
+        # Get composition from the first match
+        composition = exact_matches[0]['combined_composition']
+        similar_compounds = db.get_similar_compounds(composition)
+        # Remove duplicates from similar compounds that are in exact matches
+        similar_compounds = [
+            med for med in similar_compounds 
+            if not any(exact['id'] == med['id'] for exact in exact_matches)
+        ]
+    
+    return SearchResponse(
+        exact_matches=exact_matches,
+        similar_compounds=similar_compounds
+    )
 
 @app.get("/medicines/generic/{medicine_name}")
 async def get_generic_alternative(medicine_name: str) -> Dict:

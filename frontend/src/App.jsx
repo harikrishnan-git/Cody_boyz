@@ -5,7 +5,8 @@ import MedicineCard from "./components/MedicineCard";
 import FileInput from "./components/FileInput";
 
 function App() {
-  const [searchResults, setSearchResults] = useState([]);
+  const [exactMatches, setExactMatches] = useState([]);
+  const [similarCompounds, setSimilarCompounds] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -20,7 +21,8 @@ function App() {
         throw new Error("Failed to fetch results");
       }
       const data = await response.json();
-      setSearchResults(data);
+      setExactMatches(data.exact_matches);
+      setSimilarCompounds(data.similar_compounds);
     } catch (err) {
       setError("Failed to fetch results. Please try again.");
       console.error("Search error:", err);
@@ -33,21 +35,29 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const results = [];
+      const exactResults = [];
+      const similarResults = [];
+
       for (const name of medicineNames) {
         const response = await fetch(
           `http://localhost:8000/medicines/search/${encodeURIComponent(name.trim())}`
         );
         if (!response.ok) {
-          continue; // Skip failed searches
+          continue;
         }
         const data = await response.json();
-        if (data && data.length > 0) {
-          results.push(...data);
+        if (data.exact_matches.length > 0) {
+          exactResults.push(...data.exact_matches);
+        }
+        if (data.similar_compounds.length > 0) {
+          similarResults.push(...data.similar_compounds);
         }
       }
-      setSearchResults(results);
-      if (results.length === 0) {
+
+      setExactMatches(exactResults);
+      setSimilarCompounds(similarResults);
+
+      if (exactResults.length === 0 && similarResults.length === 0) {
         setError("No medicines found in the prescription.");
       }
     } catch (err) {
@@ -88,9 +98,7 @@ function App() {
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
             <p className="mt-4 text-gray-600 font-medium">
-              {searchResults.length > 0
-                ? "Processing more medicines..."
-                : "Searching for medicines..."}
+              Searching for medicines...
             </p>
           </div>
         )}
@@ -101,19 +109,60 @@ function App() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {searchResults.map((medicine, index) => (
-            <MedicineCard
-              key={`${medicine.id}-${index}`}
-              name={medicine.name}
-              manufacturer="Generic"
-              price="Contact pharmacy"
-              genericName={medicine.matched_generic}
-              composition={medicine.combined_composition}
-              matchScore={medicine.match_score}
-            />
-          ))}
-        </div>
+        {/* Exact Matches Section */}
+        {exactMatches.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              Exact Matches
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {exactMatches.map((medicine, index) => (
+                <MedicineCard
+                  key={`exact-${medicine.id}-${index}`}
+                  name={medicine.name}
+                  manufacturer="Generic"
+                  price="Contact pharmacy"
+                  genericName={medicine.matched_generic}
+                  composition={medicine.combined_composition}
+                  matchScore={medicine.match_score}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Similar Compounds Section */}
+        {similarCompounds.length > 0 && (
+          <div>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-blue-500 mr-2"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+              Similar Alternatives
+              <span className="ml-2 text-sm text-gray-500 font-normal">
+                (Based on chemical composition)
+              </span>
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {similarCompounds.map((medicine, index) => (
+                <MedicineCard
+                  key={`similar-${medicine.id}-${index}`}
+                  name={medicine.name}
+                  manufacturer="Generic"
+                  price="Contact pharmacy"
+                  genericName={medicine.matched_generic}
+                  composition={medicine.combined_composition}
+                  matchScore={medicine.match_score}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

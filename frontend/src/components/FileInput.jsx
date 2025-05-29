@@ -28,14 +28,28 @@ export default function FileInput({ onExtractComplete }) {
       const {
         data: { text },
       } = await worker.recognize(file);
-      await worker.terminate();
-
+      await worker.terminate();      // Extract medicine names with improved filtering
       const medicineNames = text
         .split('\n')
         .map(line => line.trim())
-        .filter(line => line.length > 0)
-        .filter(line => !line.match(/^[0-9.]+$/))
-        .filter(line => line.length > 3);
+        .filter(line => {
+          // Remove lines that are just numbers, dates, or common prescription words
+          if (line.match(/^[0-9.]+$/) || 
+              line.match(/^\d{1,2}\/\d{1,2}\/\d{2,4}$/) ||
+              /^(dr|prescription|rx|pharmacy|date|name|age|sex|address|directions|sig|phone)/i.test(line)) {
+            return false;
+          }
+          
+          // Keep lines that look like medicine entries:
+          // - Contains numbers with units (e.g., 500mg, 10ml)
+          // - Contains common medicine suffixes
+          // - Is between 4 and 50 characters (to avoid long sentences)
+          return (line.length >= 4 && line.length <= 50) && (
+            line.match(/\d+\s*(mg|ml|mcg|g|iu)/i) ||
+            /tablet|capsule|injection|syrup|ointment|gel|cream|suspension|solution/i.test(line) ||
+            /(cin|zole|olol|ide|ate|ine|xin|sin|lin|din)$/i.test(line.split(' ')[0]) // Common drug name endings
+          );
+        });
       
       if (medicineNames.length === 0) {
         setError('No medicine names found in the image. Please ensure the image is clear and contains medicine names.');
